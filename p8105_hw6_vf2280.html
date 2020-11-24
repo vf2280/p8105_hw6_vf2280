@@ -368,7 +368,38 @@ summary {
 </div>
 
 
-
+<p>Read in data.</p>
+<div id="problem-1" class="section level2">
+<h2>Problem 1</h2>
+<p>Read in the data.</p>
+<pre class="r"><code>homocide_df = 
+  read_csv(&quot;homicide_data/homicide-data.csv&quot;) %&gt;%
+  mutate(
+    city_state = str_c(city, state, sep = &quot;_&quot;),
+    resolved = case_when(
+      disposition == &quot;Closed without arrest&quot; ~ &quot;unsolved&quot;,
+      disposition == &quot;Open/No arrest&quot; ~ &quot;unsolved&quot;,
+      disposition == &quot;Closed by arrest&quot; ~ &quot;solved&quot;
+    )
+  ) %&gt;%
+  select(city_state, resolved) %&gt;%
+  filter(city_state != &quot;Tulsa_AL&quot;)</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   uid = col_character(),
+##   reported_date = col_double(),
+##   victim_last = col_character(),
+##   victim_first = col_character(),
+##   victim_race = col_character(),
+##   victim_age = col_character(),
+##   victim_sex = col_character(),
+##   city = col_character(),
+##   state = col_character(),
+##   lat = col_double(),
+##   lon = col_double(),
+##   disposition = col_character()
+## )</code></pre>
+</div>
 
 
 
