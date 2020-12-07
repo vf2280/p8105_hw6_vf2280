@@ -1,7 +1,9 @@
 ---
 title: "Homework 6"
 author: "Vasili Fokaidis"
-output: html_document
+output: 
+  html_document:
+    code_folding: hide
 ---
 
 ```{r setup, include = FALSE}
@@ -169,5 +171,99 @@ cv_df =
     test = map(test, as_tibble)
   )
 
+cv_df_1 = 
+  cv_df %>%
+    mutate(
+      full_model = map(.x = train, ~ lm(bwt ~ ., data = .x)),
+      new_fit_0 = map(.x = train, ~ lm(bwt ~ blength + gaweeks, data = .x )),
+      new_fit_1 = map(.x = train, ~ lm(bwt ~ bhead + blength + babysex + bhead*blength + bhead*babysex + blength*babysex + bhead*blength*babysex, data = .x))
+    ) %>%
+    mutate(
+      rmse_full = map2(.x = full_model, .y = test, ~ rmse(model = .x, data = .y)),
+      rmse_fit_0 = map2(.x = new_fit_0, .y = test, ~ rmse(model = .x, data = .y)),
+      rmse_fit_1 = map2(.x = new_fit_1, .y = test, ~ rmse(model = .x, data = .y))
+    )
+
 ```
+
+What does this look like?
+
+```{r}
+cv_df_1 %>%
+  select(starts_with("rmse")) %>%
+  pivot_longer(
+    everything(),
+    names_to = "model",
+    values_to = "rmse",
+    names_prefix = "rmse_"
+  ) %>%
+  unnest() %>%
+  ggplot(aes(x = model, y = rmse)) +
+  geom_violin()
+```
+
+`fit_0` model shows high average RMSE compared to the `fit_1` and `full` model. The `full` model shows to have the lowest average RMSE making it one of the better models of the three. However, this model is more complex and perhaps, harder to interpret. So, the `fit_1` model may be better in terms of fit and interpretation.
+
+Compute average RMSEs.
+
+```{r}
+cv_df_1 %>%
+  select(starts_with("rmse")) %>%
+  pivot_longer(
+    everything(),
+    names_to = "model",
+    values_to = "rmse",
+    names_prefix = "rmse_"
+  ) %>%
+  unnest() %>%
+  group_by(model) %>%
+  summarize(avg_rmse = mean(rmse)) %>%
+  knitr::kable()
+```
+
+## Problem 3
+
+Read in data.
+
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
+
+Create bootstrap function. And, bootstrap 5000 times.
+
+```{r}
+boot_sample = function(df) {
+  sample_frac(df, replace = TRUE)
+}
+
+boot_straps = 
+  tibble(
+    strap_number = 1:5000,
+    strap_sample = rerun(5000, boot_sample(weather_df))
+  )
+```
+
+Run regression with `tmax` as response and `tmin` as predictor.
+
+```{r}
+boot_results = 
+  boot_straps %>%
+  mutate(
+    models = map(.x = strap_sample, ~lm(tmax ~ tmin, data = .x)),
+    results = map(models, broom::glance)
+  ) %>%
+  select(strap_number, results) %>%
+  unnest(results)
+```
+
 
