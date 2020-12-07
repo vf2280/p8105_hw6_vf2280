@@ -101,7 +101,6 @@ bth_wt =
     frace = factor(frace, levels = c(1, 2, 3, 4, 8, 9), labels = c("white", "black", "asian", "puerto_rican", "other", "unknown")),
     mrace = factor(mrace, levels = c(1, 2, 3, 4, 8), labels = c("white", "black", "asian", "puerto_rican", "other"))
   )
-  
 ```
 
 To clean the data, I turned `babysex`, `frace`, and `mrace` into factors, I converted `bwt` from grams to pounds, and I converted `frace` and `mrace` values to the corresponding races.
@@ -116,10 +115,9 @@ full_model =
 step(full_model, direction = "backward", trace = TRUE)
 
 full_model =
-  step(full_model, direction = "backward", trace = FALSE) %>%
-  broom::tidy()
+  step(full_model, direction = "backward", trace = FALSE)
 
-full_model
+full_model %>% summary()
 ```
 
 Using backward elimination, the model was fitted using criterion based procedures (discrimination based on AIC values of various models). First, I developed a linear model containing all variables, then I ran the backward elimination with trace to evaluate the steps taken to deduce the final model. For example, the model without `wtgain` produced an AIC of -4403.92, and since this criterion based procedure aims for models with the lowest AIC, `wtgain` was removed, and so on. Finally, after many steps of this process, the model was produced.
@@ -127,5 +125,25 @@ Using backward elimination, the model was fitted using criterion based procedure
 Let's look at the result...
 
 ```{r}
-
+ bth_wt %>%
+  add_residuals(full_model) %>%
+  add_predictions(full_model) %>%
+  ggplot(aes(x = pred , y = resid)) +
+  geom_point() +
+  geom_smooth
 ```
+
+The residuals are mostly well-behaved centering around 0. There is little deviation from the estimated regression line.
+
+Compare your models.
+
+```{r}
+full_model %>% summary(full_model)
+
+new_fit_0 = lm(bwt ~ blength + gaweeks, data = bth_wt)
+summary(new_fit_0)
+
+new_fit_0 = lm(bwt ~ bhead + blength + bab, data = bth_wt)
+summary(new_fit_0)
+```
+
