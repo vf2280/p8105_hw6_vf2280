@@ -253,10 +253,11 @@ boot_straps =
   )
 ```
 
+
 Run regression with `tmax` as response and `tmin` as predictor.
 
 ```{r}
-boot_results = 
+r_sq = 
   boot_straps %>%
   mutate(
     models = map(.x = strap_sample, ~lm(tmax ~ tmin, data = .x)),
@@ -264,6 +265,31 @@ boot_results =
   ) %>%
   select(strap_number, results) %>%
   unnest(results)
+
+log_b0_b1 =
+  boot_straps %>%
+    mutate(
+      models = map(.x = strap_sample, ~lm(tmax ~ tmin, data = .x)),
+      results = map(models, broom::tidy)
+    ) %>%
+    unnest(results) %>%
+    select(term, estimate) %>%
+    pivot_wider(
+      names_from = term,
+      values_from = estimate
+    ) %>%
+    unnest() %>%
+    rename(
+      intercept = `(Intercept)`
+    ) %>%
+    summarize(
+      log_b0_b1 = log(intercept/tmin),
+      strap_number = c(1:5000)
+    )
+
+boot_results =
+  right_join(x = r_sq, y = log_b0_b1, by = "strap_number", all = TRUE)
 ```
+
 
 
