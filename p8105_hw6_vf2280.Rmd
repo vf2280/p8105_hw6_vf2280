@@ -72,7 +72,7 @@ glm(resolution ~ victim_age + victim_race + victim_sex,
 ```
 
 
-Try this across cities.
+Try this across cities. NOT WORKING WHYYYYYYYY!!!!!
 
 ```{r}
 models_df =
@@ -88,7 +88,44 @@ homicide_df %>%
 
 ## Problem 2
 
+Read in data.
+
+```{r}
+bth_wt = 
+  read_csv("birthweight_data/birthweight.csv") %>%
+  mutate(
+    babysex = as.factor(babysex),
+    mrace = as.factor(mrace),
+    frace = as.factor(frace),
+    bwt = bwt/453.592,
+    frace = factor(frace, levels = c(1, 2, 3, 4, 8, 9), labels = c("white", "black", "asian", "puerto_rican", "other", "unknown")),
+    mrace = factor(mrace, levels = c(1, 2, 3, 4, 8), labels = c("white", "black", "asian", "puerto_rican", "other"))
+  )
+  
+```
+
+To clean the data, I turned `babysex`, `frace`, and `mrace` into factors, I converted `bwt` from grams to pounds, and I converted `frace` and `mrace` values to the corresponding races.
+
+
+Let's fit the model we care about (through backwards elimination)
+
+```{r}
+full_model = 
+  lm(bwt ~ ., data = bth_wt)
+
+step(full_model, direction = "backward", trace = TRUE)
+
+full_model =
+  step(full_model, direction = "backward", trace = FALSE) %>%
+  broom::tidy()
+
+full_model
+```
+
+Using backward elimination, the model was fitted using criterion based procedures (discrimination based on AIC values of various models). First, I developed a linear model containing all variables, then I ran the backward elimination with trace to evaluate the steps taken to deduce the final model. For example, the model without `wtgain` produced an AIC of -4403.92, and since this criterion based procedure aims for models with the lowest AIC, `wtgain` was removed, and so on. Finally, after many steps of this process, the model was produced.
+
+Let's look at the result...
+
 ```{r}
 
 ```
-
