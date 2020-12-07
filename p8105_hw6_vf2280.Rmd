@@ -36,18 +36,18 @@ Read in the data.
 
 ```{r}
 homicide_df = 
-  read_csv("homicide_data/homicide-data.csv") %>%
+  read_csv("homicide_data/homicide-data.csv", na = c("", "NA", "Uknown")) %>%
   mutate(
     city_state = str_c(city, state, sep = ", "),
+    victim_age = as.numeric(victim_age),
     resolution = case_when(
       disposition == "Closed without arrest" ~ 0,
       disposition == "Open/No arrest"        ~ 0,
-      disposition == "Closed by arrest"      ~ 1
-    )
+      disposition == "Closed by arrest"      ~ 1)
   ) %>%
   filter(
     victim_race %in% c("White", "Black"),
-    city_state != "Tulsa_AL") %>%
+    city_state != "Tulsa, AL") %>%
   select(city_state, resolution, victim_age, victim_race, victim_sex)
 ```
 
@@ -72,17 +72,25 @@ glm(resolution ~ victim_age + victim_race + victim_sex,
 ```
 
 
-Try this across cities. NOT WORKING WHYYYYYYYY!!!!!
+Try this across cities.
 
 ```{r}
-models_df =
-homicide_df %>%
-  nest(data = -city_state) %>%
+models_results_df = 
+  homicide_df %>% 
+  nest(data = -city_state) %>% 
   mutate(
     models = 
       map(.x = data, ~glm(resolution ~ victim_age + victim_race + victim_sex, data = .x, family = binomial())),
-    results = map(models, broom::tidy())
-  )
+    results = map(models, broom::tidy)
+  ) %>% 
+  select(city_state, results) %>% 
+  unnest(results) %>% 
+  mutate(
+    OR = exp(estimate),
+    CI_lower = exp(estimate - 1.96 * std.error),
+    CI_upper = exp(estimate + 1.96 * std.error)
+  ) %>% 
+  select(city_state, term, OR, starts_with("CI")) 
 ```
 
 
@@ -99,11 +107,12 @@ bth_wt =
     frace = as.factor(frace),
     bwt = bwt/453.592,
     frace = factor(frace, levels = c(1, 2, 3, 4, 8, 9), labels = c("white", "black", "asian", "puerto_rican", "other", "unknown")),
-    mrace = factor(mrace, levels = c(1, 2, 3, 4, 8), labels = c("white", "black", "asian", "puerto_rican", "other"))
+    mrace = factor(mrace, levels = c(1, 2, 3, 4, 8), labels = c("white", "black", "asian", "puerto_rican", "other")),
+    babysex = recode(babysex, `1` = 0L, `2` = 1L)
   )
 ```
 
-To clean the data, I turned `babysex`, `frace`, and `mrace` into factors, I converted `bwt` from grams to pounds, and I converted `frace` and `mrace` values to the corresponding races.
+To clean the data, I turned `babysex`, `frace`, and `mrace` into factors, I converted `bwt` from grams to pounds, and I converted `frace` and `mrace` values to the corresponding races. And, I recoded `babysex` into a dummy variable where 0 = Male, and 1 = Female.
 
 
 Let's fit the model we care about (through backwards elimination)
@@ -130,20 +139,35 @@ Let's look at the result...
   add_predictions(full_model) %>%
   ggplot(aes(x = pred , y = resid)) +
   geom_point() +
-  geom_smooth
+  theme_bw()
 ```
 
 The residuals are mostly well-behaved centering around 0. There is little deviation from the estimated regression line.
 
-Compare your models.
+Compare your models. Make two others first.
 
 ```{r}
-full_model %>% summary(full_model)
+full_model %>% summary()
 
 new_fit_0 = lm(bwt ~ blength + gaweeks, data = bth_wt)
 summary(new_fit_0)
 
-new_fit_0 = lm(bwt ~ bhead + blength + bab, data = bth_wt)
-summary(new_fit_0)
+new_fit_1 = lm(bwt ~ bhead + blength + babysex + bhead*blength + bhead*babysex + blength*babysex + bhead*blength*babysex, data = bth_wt)
+summary(new_fit_1)
+```
+
+Now cross validate using modelr.
+
+```{r}
+cv_df = 
+  crossv_mc(bth_wt, 100)
+
+cv_df = 
+  cv_df %>%
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble)
+  )
+
 ```
 
