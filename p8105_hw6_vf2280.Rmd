@@ -254,7 +254,8 @@ boot_straps =
 ```
 
 
-Run regression with `tmax` as response and `tmin` as predictor.
+Run regression with `tmax` as response and `tmin` as predictor. And produce estimates of $\hat{r}^2$ and 
+$\log(\hat{\beta}_0 * \hat{\beta}_1)$
 
 ```{r}
 r_sq = 
@@ -291,5 +292,40 @@ boot_results =
   right_join(x = r_sq, y = log_b0_b1, by = "strap_number", all = TRUE)
 ```
 
+Plot distributions of estimates.
 
+```{r}
+par(mfrow = c(1, 2))
+
+boot_results %>%
+  ggplot(aes(x = r.squared)) +
+  geom_density()
+
+boot_results %>%
+  ggplot(aes(x = log_b0_b1)) +
+  geom_density()
+```
+
+The distribution of the `r.squared` values shows heavy tails. It also indicates a prominent peak at roughly 0.915 indicating that the data are close to the fitted regression line.
+
+As for `log_b0_1`, the distribution shows heavy tails as well with a center around roughly 1.95. This shows that the log-normal interaction indicates that for every 1 degree increase in tmin, there is a 1.95 increase in tmax.
+
+Confidence intervals for $\hat{r}^2$ and $\log(\hat{\beta}_0 * \hat{\beta}_1)$!
+
+```{r}
+boot_results %>%
+  select(r.squared, log_b0_b1) %>%
+  pivot_longer(
+    everything(),
+    names_to = "term",
+    values_to = "estimate"
+  ) %>%
+  group_by(term) %>%
+  summarize(
+    ci_lwr = quantile(estimate, 0.025),
+    ci_upr = quantile(estimate, 0.975)
+  ) %>%
+  knitr::kable()
+
+```
 
