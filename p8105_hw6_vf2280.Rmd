@@ -265,7 +265,7 @@ r_sq =
     results = map(models, broom::glance)
   ) %>%
   select(strap_number, results) %>%
-  unnest(results)
+  unnest(results) 
 
 log_b0_b1 =
   boot_straps %>%
@@ -290,6 +290,8 @@ log_b0_b1 =
 
 boot_results =
   right_join(x = r_sq, y = log_b0_b1, by = "strap_number", all = TRUE)
+
+boot_results
 ```
 
 Plot distributions of estimates.
