@@ -199,10 +199,15 @@ cv_df_1 %>%
   ) %>%
   unnest() %>%
   ggplot(aes(x = model, y = rmse)) +
-  geom_violin()
+  geom_violin() +
+  labs(
+    title = "Residuals vs Fitted Values",
+    y = "Residuals",
+    x = "Fitted Values")
+  
 ```
 
-`fit_0` model shows high average RMSE compared to the `fit_1` and `full` model. The `full` model shows to have the lowest average RMSE making it one of the better models of the three. However, this model is more complex and perhaps, harder to interpret. So, the `fit_1` model may be better in terms of fit and interpretation.
+`fit_0` model shows high RMSEs compared to the `fit_1` and `full` model. The `full` model shows to have the lowest RMSEs making it one of the better models of the three. `fit_1` also shows low RMSEs, but this model is more complex and perhaps, harder to interpret. So, the `fit_1` model is better overall in terms of fit and interpretation.
 
 Compute average RMSEs.
 
@@ -220,6 +225,8 @@ cv_df_1 %>%
   summarize(avg_rmse = mean(rmse)) %>%
   knitr::kable()
 ```
+
+Comment on RMSE
 
 ## Problem 3
 
