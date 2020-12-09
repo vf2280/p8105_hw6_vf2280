@@ -315,9 +315,9 @@ boot_results %>%
   geom_density()
 ```
 
-The distribution of the `r.squared` values shows heavy tails. It also indicates a prominent peak at roughly 0.915 indicating that the data are close to the fitted regression line.
+The distribution of the $\hat{r}^2$ values shows heavy tails and appears to be normally distributed. It also indicates a prominent peak at roughly 0.915 indicating that the data are close to the fitted regression line.
 
-As for `log_b0_1`, the distribution shows heavy tails as well with a peak around roughly 1.95. This shows that the log-transformed interaction indicates that for every 1 degree increase in tmin, there is a 1.95 increase in tmax.
+As for $\log(\hat{\beta}_0 * \hat{\beta}_1)$!, the distribution shows heavy tails as well and appears to be normally distributed with a peak around roughly 1.95.
 
 Confidence intervals for $\hat{r}^2$ and $\log(\hat{\beta}_0 * \hat{\beta}_1)$!
 
